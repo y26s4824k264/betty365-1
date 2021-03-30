@@ -10,7 +10,7 @@ import re
 
 #TODO Common user-agents randomizer
 
-PATH = './d_token_fetcher/'
+PATH = './deobfuscator365/'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36'
 
 def download_main_page():
@@ -39,7 +39,7 @@ def fetch_bootjs_script(main_page):
     return parser.bootjs
 
 def fetch_D_token_by_code(bootjs_code: str):
-    filename = PATH + 'fetcher.js'
+    filename = PATH + 'd_fetcher.js'
     file = open(filename, "w")
 
     file.write(
@@ -51,10 +51,12 @@ def fetch_D_token_by_code(bootjs_code: str):
                     url: "https://www.bet365.com",
                     runScripts: "outside-only" 
                 });
-        """
-            #   Fetch D_ part
-        """
-                function fetchHandshakeD_part(bootjsCode){
+                
+                """
+                    #   Fetch D_ token
+                """
+                
+                function fetchHandshakeD_token(bootjsCode){
                     bootjs.eval(bootjsCode);
         
                     var fetchComposedToken = function(window) {
@@ -89,8 +91,8 @@ def fetch_D_token_by_code(bootjs_code: str):
                             "Video"
                         ];
                         
-                         for (var indice = 0; indice < tags.length; indice++) {
-                             var thisTag = tags[indice]
+                         for (var index = 0; index < tags.length; index++) {
+                             var thisTag = tags[index]
                                , winElement = window["HTML" + thisTag + "Element"]
                                , theCaught = winElement.prototype.Caught;
                              if (!theCaught)
@@ -136,19 +138,33 @@ def fetch_D_token_by_code(bootjs_code: str):
                     var initialN = ''
                     var finalQ = fetchComposedToken(bootjs);
                     var HandJ = finalQ.split('.');
-        """
-            #   NOTE: N Token can be also fetched by Base-64 encoding the evaluated value in the expression
-            #         'ns_weblib_util.WebsiteConfig.SERVER_TIME+300'
-        """
+                    """
+                        #   NOTE: N Token can be also fetched by Base-64 encoding the evaluated value in the expression
+                        #         'ns_weblib_util.WebsiteConfig.SERVER_TIME+300'
+                    """
                     var finalN = transformNtoken(bootjs, HandJ[0]);
                     var finalJ = HandJ[1];
                     var D_token = [finalN, '.', finalJ].join('');
                     return D_token;
                 }
-        """ 
-            #   String.raw`···`: avoids string escaping problems.
-        """
-                console.log("<D_TOKEN>" + fetchHandshakeD_part(String.raw`""" + str(bootjs_code) + """`) + "</D_TOKEN>");
+                
+                """ 
+                    #   String.raw`···`: avoids string escaping problems.
+                """
+                d_token = fetchHandshakeD_token(String.raw
+                    `
+                    """
+                        #   Cancel some unneeded built-in functions that cause bugs during evaluation.
+                    """
+                    overrideFunction = function() {}
+                    XMLHttpRequest.prototype.open = overrideFunction;
+                    XMLHttpRequest.prototype.send = overrideFunction;
+                    
+                    """ + str(bootjs_code) + """
+                    `
+                )
+                
+                console.log("<D_TOKEN>" + d_token + "</D_TOKEN>");
         } catch (error) {
             console.error(error);
         } finally {
