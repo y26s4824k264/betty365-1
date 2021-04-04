@@ -3,42 +3,12 @@
     Author: @ElJaviLuki
 '''
 
-from html.parser import HTMLParser
-import requests
 import subprocess
 import re
 
-#TODO Common user-agents randomizer
-
 PATH = './deobfuscator365/'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36'
 
-def download_main_page():
-    headers = {
-        'Connection': 'keep-alive',
-        'User-Agent': USER_AGENT,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-
-        #Todo Make universal
-        'Accept-Language': 'es-ES,es;q=0.9',
-    }
-
-    return requests.get('https://www.bet365.com/', headers=headers)
-
-def fetch_bootjs_script(main_page):
-    class Bet365_HTMLParser(HTMLParser):
-        bootjs = ''
-
-        def handle_data(self, data):
-            if self.cdata_elem == 'script':
-                self.bootjs = data
-                return
-
-    parser = Bet365_HTMLParser()
-    parser.feed(main_page)
-    return parser.bootjs
-
-def fetch_D_token_by_code(bootjs_code: str):
+def fetch_D_token(bootjs_code: str):
     filename = PATH + 'd_fetcher.js'
     file = open(filename, "w")
 
@@ -155,6 +125,8 @@ def fetch_D_token_by_code(bootjs_code: str):
                     `
                     """
                         #   Cancel some unneeded built-in functions that cause bugs during evaluation.
+                        #   Note:   if you happen to find another bug that can be fixed by modifying a dependency, override
+                        #           that dependency here:
                     """
                     overrideFunction = function() {}
                     XMLHttpRequest.prototype.open = overrideFunction;
@@ -184,12 +156,8 @@ def fetch_D_token_by_code(bootjs_code: str):
 
     if result.returncode == 0:
         delimitedToken = re.search("<D_TOKEN>(.*?)</D_TOKEN>", result.stdout).group()
-        D_token = delimitedToken[len("<D_TOKEN>"):len(delimitedToken) - len("</D_TOKEN>")]
+        D_token = delimitedToken[len("<D_TOKEN>"):-len("</D_TOKEN>")]
     else:
         raise Exception('Error during token generation script evaluation or execution: ' + result.stderr)
 
     return D_token
-
-def fetch_D_token():
-    bootjs = fetch_bootjs_script(download_main_page().text)
-    return fetch_D_token_by_code(bootjs)
